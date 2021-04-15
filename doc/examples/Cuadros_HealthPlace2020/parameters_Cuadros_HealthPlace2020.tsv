@@ -1,0 +1,44 @@
+parameterId	parameterName	parameterScale	lowerBound	upperBound	nominalValue	estimate	initializationPriorType	initializationPriorParameters	objectivePriorType	objectivePriorParameters
+lambda_Counties_with_airports	lambda_Counties_with_airports	log10	0.01	1	0.41	1				
+lambda_Counties_neighbouring_counties_with_airports	lambda_Counties_neighbouring_counties_with_airports	log10	0.01	1	0.34	1				
+lambda_Counties_with_highways	lambda_Counties_with_highways	log10	0.01	1	0.23	1				
+lambda_Low_risk_counties	lambda_Low_risk_counties	log10	0.01	1	0.13	1				
+delta	delta	log10	0.01	1	0.229885	1				
+eta_Counties_with_airports	eta_Counties_with_airports	log10	0.01	1	0.05	1				
+eta_Counties_neighbouring_counties_with_airports	eta_Counties_neighbouring_counties_with_airports	log10	0.01	1	0.07	1				
+eta_Counties_with_highways	eta_Counties_with_highways	log10	0.01	1	0.07	1				
+eta_Low_risk_counties	eta_Low_risk_counties	log10	0.01	1	0.14	1				
+omega_Counties_with_airports	omega_Counties_with_airports	log10	0.01	1	0.04	1				
+omega_Counties_neighbouring_counties_with_airports	omega_Counties_neighbouring_counties_with_airports	log10	0.01	1	0.06	1				
+omega_Counties_with_highways	omega_Counties_with_highways	log10	0.01	1	0.04	1				
+omega_Low_risk_counties	omega_Low_risk_counties	log10	0.01	1	0.07	1				
+xi	xi	log10	0.01	1	0.06	1				
+sigma	sigma	log10	0.01	1	0.08	1				
+mu_Counties_with_airports	mu_Counties_with_airports	log10	0.01	1	0.22	1				
+mu_Counties_neighbouring_counties_with_airports	mu_Counties_neighbouring_counties_with_airports	log10	0.01	1	0.17	1				
+mu_Counties_with_highways	mu_Counties_with_highways	log10	0.01	1	0.05	1				
+mu_Low_risk_counties	mu_Low_risk_counties	log10	0.01	1	0.25	1				
+psi	psi	log10	0.01	1	0.01	1				
+phi	phi	log10	0.01	1	0.04	1				
+tau	tau	log10	0.01	1	0.08	1				
+gamma	gamma	log10	0.01	1	0.02	1				
+alpha	alpha	log10	0.01	1	0.03	1				
+Population_Counties_with_airports	Population_Counties_with_airports	log10			4052906	0				
+Population_Counties_neighbouring_counties_with_airports	Population_Counties_neighbouring_counties_with_airports	log10			4431699	0				
+Population_Counties_with_highways	Population_Counties_with_highways	log10			1811069	0				
+Population_Low_risk_counties	Population_Low_risk_counties	log10			1269948	0				
+sd_Cumulative_cases_Counties_neighbouring_counties_with_airports	sd_Cumulative_cases_Counties_neighbouring_counties_with_airports	log10	0.001	10000	1	0				
+sd_Cumulative_cases_Counties_with_airports	sd_Cumulative_cases_Counties_with_airports	log10	0.001	10000	1	0				
+sd_Cumulative_cases_Counties_with_highways	sd_Cumulative_cases_Counties_with_highways	log10	0.001	10000	1	0				
+sd_Cumulative_cases_Low_risk_counties	sd_Cumulative_cases_Low_risk_counties	log10	0.001	10000	1	0				
+sd_Deceased_Counties_neighbouring_counties_with_airports	sd_Deceased_Counties_neighbouring_counties_with_airports	log10	0.001	10000	1	0				
+sd_Deceased_Counties_with_airports	sd_Deceased_Counties_with_airports	log10	0.001	10000	1	0				
+sd_Deceased_Counties_with_highways	sd_Deceased_Counties_with_highways	log10	0.001	10000	1	0				
+sd_Deceased_Low_risk_counties	sd_Deceased_Low_risk_counties	log10	0.001	10000	1	0				
+sd_Hospitalised_Counties_neighbouring_counties_with_airports	sd_Hospitalised_Counties_neighbouring_counties_with_airports	log10	0.001	10000	1	0				
+sd_Hospitalised_Counties_with_airports	sd_Hospitalised_Counties_with_airports	log10	0.001	10000	1	0				
+sd_Hospitalised_Counties_with_highways	sd_Hospitalised_Counties_with_highways	log10	0.001	10000	1	0				
+sd_Hospitalised_Low_risk_counties	sd_Hospitalised_Low_risk_counties	log10	0.001	10000	1	0				
+sd_Total_cumulative_cases	sd_Total_cumulative_cases	log10	0.001	10000	1	0				
+sd_Total_deaths	sd_Total_deaths	log10	0.001	10000	1	0				
+sd_Total_hospitalisations	sd_Total_hospitalisations	log10	0.001	10000	1	0				
