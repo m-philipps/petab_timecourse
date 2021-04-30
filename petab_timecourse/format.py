@@ -64,9 +64,12 @@ def import_directory_of_componentwise_files(
 ) -> Tuple[Timecourse, pd.DataFrame]:
     regimens = Regimens({
         Regimen.from_path(path)
-        for path in Path(directory).iterdir()
+        #for path in Path(directory).iterdir()
+        for path in Path(directory).rglob('*.tsv')  # FIXME remove and replace with above line
     })
-    conditions_with_times = regimens.as_conditions()
+    #conditions_with_times = regimens.as_conditions()  # FIXME uncoment and remove below quickfixes
+    #conditions_with_times = {time: value for time, value in regimens.as_conditions().items() if time != 0}
+    conditions_with_times = {time + 0.1: value for time, value in regimens.as_conditions().items()}
     for index, (time, condition) in enumerate(conditions_with_times.items()):
         conditions_with_times[time] = Condition(pd.Series(
             data=condition,
