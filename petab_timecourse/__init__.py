@@ -1,6 +1,8 @@
 """PEtab timecourses."""
 from .version import __version__
 
+from .C import *
+
 from .timecourse import (
     Timecourse,
 )

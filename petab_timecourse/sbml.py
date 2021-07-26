@@ -103,7 +103,7 @@ def add_timecourse_as_events(
 
 
 def get_slug(
-        input: Any,
+        input_: Any,
         *args,
         **kwargs,
 ):
@@ -124,4 +124,4 @@ def get_slug(
     **kwargs:
         Passed on to the `slugify` call (from the `python-slugify` package).
     """
-    return slugify(str(input), *args, separator='_', **kwargs)
+    return slugify(str(input_), *args, separator='_', **kwargs)

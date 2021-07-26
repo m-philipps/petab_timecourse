@@ -9,6 +9,8 @@ from .C import (
     END,
     START,
     VALUE,
+
+    ESTIMATE,
 )
 
 
@@ -20,10 +22,12 @@ class Administration():
             start: float,
             end: float,
             value: float,
+            estimate: bool = False,
     ):
         self._start = start
         self._end = end
         self._value = value
+        self._estimate = estimate
 
     @property
     def start(self):
@@ -37,6 +41,10 @@ class Administration():
     def value(self):
         return self._value
 
+    @property
+    def estimate(self):
+        return self._estimate
+
 
 class Regimen():
     # TODO change file_ to df in __init__?
@@ -45,20 +53,36 @@ class Regimen():
         self._target = target
         self._administrations = set()
         self._times = set()
+        self._default = None
         for _, row in df.iterrows():
             # TODO assumes all values are float.. could replace with
             #      try-except; however, times are sorted later, so should be
             #      float anyway... will need to change for optimal control
-            value = float(row[VALUE])
+            estimate = False
+            try:
+                value = float(row[VALUE])
+            except ValueError:
+                if row[VALUE] == ESTIMATE:
+                    value = None
+                    estimate = True
+                else:
+                    raise
             if row[START] == DEFAULT:
                 self._default = value
+                if estimate == True:
+                    raise NotImplementedError(
+                        'The default value cannot be estimated.'
+                    )
                 continue
+            if row[VALUE] == ESTIMATE:
+                value = None
             start = float(row[START])
             end = float(row[END])
             self._administrations.add(Administration(
                 start=start,
                 end=end,
                 value=value,
+                estimate=estimate,
             ))
             self._times |= {start, end}
         assert '_default' in dir(self)

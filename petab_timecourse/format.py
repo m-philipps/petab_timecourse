@@ -62,6 +62,7 @@ def deduplicate_conditions(conditions: Sequence[Condition]) -> Sequence[str]:
 def import_directory_of_componentwise_files(
         directory: TYPE_PATH,
 ) -> Tuple[Timecourse, pd.DataFrame]:
+    directory = Path(directory)
     regimens = Regimens({
         Regimen.from_path(path)
         for path in Path(directory).iterdir()
