@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import Dict, Sequence
+from typing import Dict, Sequence, Tuple
 
 import amici
 from amici.petab_import import import_petab_problem
@@ -20,6 +20,7 @@ def simulate_timecourse(
         timecourse_id: str,
         problem_parameters: Dict[str, float] = None,
         parameter_mapping = None,
+        sensi_orders: Tuple[int, ...] = (0,),
 ):
     timecourse = get_timecourse(
         petab_problem=parent_petab_problem,
@@ -36,7 +37,6 @@ def simulate_timecourse(
 
         amici_edatas = create_edatas(amici_model, petab_problem)
         if problem_parameters is not None:
-            print('yeeesfsefc')
             assert parameter_mapping is not None
             amici.parameter_mapping.fill_in_parameters(
                 edatas=amici_edatas,
@@ -75,7 +75,7 @@ def simulate_timecourse(
             amici_model=amici_model,
             solver=amici_solver,
             edatas=amici_edatas,
-            #problem_parameters=problem_parameters,
+            problem_parameters=problem_parameters,
         ))
     return results
 

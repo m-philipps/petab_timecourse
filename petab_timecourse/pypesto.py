@@ -68,12 +68,13 @@ class TimecourseObjective(ObjectiveBase):
             mode: str,
             **kwargs,
     ):
-        # TODO sensi_orders, mode
+        # TODO mode
         return simulate_timecourse_objective(
-            self.petab_problem,
-            self.timecourse_id,
-            dict(zip(self.x_names, x)),
-            self.parameter_mapping,
+            parent_petab_problem=self.petab_problem,
+            timecourse_id=self.timecourse_id,
+            problem_parameters=dict(zip(self.x_names, x)),
+            parameter_mapping=self.parameter_mapping,
+            sensi_orders=sensi_orders,
             **kwargs,
         )
 
@@ -83,6 +84,7 @@ def simulate_timecourse_objective(
         timecourse_id: str,
         problem_parameters: Dict[str, float],
         parameter_mapping,
+        sensi_orders: Tuple[int, ...] = (0,),
         **kwargs,
 ):
     results = simulate_timecourse(
@@ -90,24 +92,22 @@ def simulate_timecourse_objective(
         timecourse_id,
         problem_parameters=problem_parameters,
         parameter_mapping=parameter_mapping,
+        sensi_orders=sensi_orders,
+        **kwargs,
     )
-    return_result = {
+
+    sensitivity_parameter_ids = results[0]['sllh'].keys()
+    for result in results:
+        if result['sllh'].keys() != sensitivity_parameter_ids:
+            raise NotImplementedError(
+                'All conditions must provide sensitivities for the same set '
+                'of parameters.'
+            )
+    accumulated_result = {
         FVAL: sum(-result['llh']  for result in results),
-        # FIXME Assumes all timecourse sections have the same parameter SLLH
         GRAD: {
             k: sum(-result['sllh'][k] for result in results)
-            for k in results[0]['sllh']
+            for k in sensitivity_parameter_ids
         }
     }
-    print(results)
-    print(return_result)
-    #breakpoint()
-    print('breaking')
-    return {
-        FVAL: sum(-result['llh']  for result in results),
-        # FIXME Assumes all timecourse sections have the same parameter SLLH
-        GRAD: {
-            k: sum(-result['sllh'][k] for result in results)
-            for k in results[0]['sllh']
-        }
-    }
+    return accumulated_result
