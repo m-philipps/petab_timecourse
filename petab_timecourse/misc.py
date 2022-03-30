@@ -104,6 +104,14 @@ def subset_petab_problem(
         petab_problems.append(deepcopy(petab_problem))
         petab_problems[-1].condition_df.loc[timecourse_id] = \
             petab_problems[-1].condition_df.loc[condition_id]
+        # Drop other conditions
+        # FIXME test how this affects other conditions or how to combine normal conditions + timecourses...
+        #       or only allow timecourses?
+        petab_problems[-1].condition_df = (
+            petab_problems[-1]
+            .condition_df
+            .loc[[timecourse_id]]
+        )
         petab_problems[-1].measurement_df = \
             petab_problems[-1].measurement_df[
                 petab_problems[-1].measurement_df[TIME].astype(float)
@@ -136,6 +144,7 @@ def subset_petab_problem(
         petab_problems[-1].parameter_df.drop(
             condition_components,
             inplace=True,
+            errors='ignore',  # only parameters that are in the table are dropped
         )
 
         #for t in [timepoint, next_timepoint]:

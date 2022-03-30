@@ -37,3 +37,6 @@ DUMMY_MEASUREMENT = 1
 DUMMY_NOISE = 1
 
 ESTIMATE = 'estimate'
+
+FINAL_STATES = 'final_states'
+RESULTS = 'results'

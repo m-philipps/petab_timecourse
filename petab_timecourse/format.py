@@ -61,8 +61,12 @@ def deduplicate_conditions(conditions: Sequence[Condition]) -> Sequence[str]:
 
 def import_directory_of_componentwise_files(
         directory: TYPE_PATH,
+        timecourse_id: str = None,
 ) -> Tuple[Timecourse, pd.DataFrame]:
     directory = Path(directory)
+    if timecourse_id is None:
+        timecourse_id = f'timecourse_{directory.parts[-1]}'
+
     regimens = Regimens({
         Regimen.from_path(path)
         for path in Path(directory).iterdir()
@@ -71,12 +75,12 @@ def import_directory_of_componentwise_files(
     for index, (time, condition) in enumerate(conditions_with_times.items()):
         conditions_with_times[time] = Condition(pd.Series(
             data=condition,
-            name=f'timecourse_{directory.parts[-1]}_condition_{index}',
+            name=f'{timecourse_id}_condition_{index}',
         ))
     unique_conditions, condition_sequence = \
         deduplicate_conditions(list(conditions_with_times.values()))
     timecourse_df = pd.DataFrame(data={
-        TIMECOURSE_ID: [f'timecourse_{directory.parts[-1]}'],
+        TIMECOURSE_ID: [f'{timecourse_id}'],
         TIMECOURSE: [TIMECOURSE_ITEM_DELIMETER.join([
             f'{timepoint}{TIME_CONDITION_DELIMETER}{condition_id}'
             for timepoint, condition_id in \

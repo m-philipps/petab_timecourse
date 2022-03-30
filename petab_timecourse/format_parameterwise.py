@@ -85,9 +85,14 @@ class Regimen():
                 estimate=estimate,
             ))
             self._times |= {start, end}
+        # FIXME nicer errors
         assert '_default' in dir(self)
         assert self.default is not None
-        assert not pd.isna(self.default)
+        if pd.isna(self.default):
+            raise ValueError(
+                'Please provide a default value for the regimen of target: '
+                f'{self._target}'
+            )
         assert '_times' in dir(self)
         self._times = sorted(self._times)
 

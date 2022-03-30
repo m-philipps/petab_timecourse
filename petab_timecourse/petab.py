@@ -1,9 +1,11 @@
 from typing import Any, Dict, Iterable, List, Optional, TextIO, Union
 
 import pandas as pd
+import petab
 from petab.C import (
     CONDITION_ID,
     CONDITION_NAME,
+    PARAMETER_SCALE,
 )
 
 from .C import (
@@ -81,3 +83,20 @@ class Condition(dict):
     #    #    for component, value in self.items()
     #    #    if component not in NON_COMPONENT_CONDITION_LABELS
     #    #]
+#
+#
+#def unscale_parameters(
+#    scaled_parameters: Dict[str, float],
+#    petab_problem: petab.Problem,
+#):
+#    scales = dict(petab_problem.parameter_df[PARAMETER_SCALE])
+#
+#    unscaled_parameters = {
+#        parameter_id: petab.parameters.unscale(
+#            parameter_value,
+#            scales[parameter_id],
+#        )
+#        for parameter_id, parameter_value in scaled_parameters.items()
+#    }
+#
+#    return unscaled_parameters
