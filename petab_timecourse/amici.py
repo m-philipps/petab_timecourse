@@ -1,16 +1,26 @@
+import copy
 from itertools import chain
-from typing import Any, Dict, Sequence, Tuple, Union
+from typing import Any, Dict, List, Sequence, Tuple, Union
 import warnings
 
 import amici
 from amici.petab_import import import_petab_problem
+from amici.parameter_mapping import ParameterMapping
 from amici.petab_objective import (
     create_edatas,
     simulate_petab,
 )
-from more_itertools import one
+import amici.petab_objective
+from more_itertools import one, only
+import numpy as np
 import petab
-from petab.C import CONDITION_NAME
+from petab.C import (
+    CONDITION_NAME,
+    SIMULATION_CONDITION_ID,
+    TIME,
+    MEASUREMENT,
+    OBSERVABLE_ID,
+)
 from pypesto.objective.amici_util import create_identity_parameter_mapping
 
 from .misc import (
@@ -62,7 +72,6 @@ def simulate_timecourse(
 
         # Replace a controlled parameter with the ID of its timepoint-specific
         # control parameter (hack to ensure sensitivities are computed correctly)
-        #print(1)
         replace_timecourse_parameters = {
             k: v
             for k, v in petab_problem.condition_df.loc[timecourse_id].items()
@@ -94,13 +103,9 @@ def simulate_timecourse(
             # the control parameter)
             petab_problem.parameter_df.loc[old_parameter_id] = \
                 petab_problem.parameter_df.loc[new_parameter_id]
-        #print(2)
 
         amici_model = import_petab_problem(petab_problem)
         amici_model.setT0(float(timecourse[index][0]))
-        #if initial_states is not None:
-        #    breakpoint()
-        #print(f'\n\nTime: {amici_model.t0()}\n\n')
 
         amici_edatas = create_edatas(amici_model, petab_problem)
         if problem_parameters is not None:
@@ -112,9 +117,6 @@ def simulate_timecourse(
                 amici_model.getParameters()
             ))
 
-            #assert parameter_mapping is not None
-            #print(problem_parameters)
-            #print(petab_problem.measurement_df)
             if parameter_mapping is None:
                 parameter_mapping = \
                     create_identity_parameter_mapping(amici_model, 1)
@@ -127,7 +129,6 @@ def simulate_timecourse(
                     **model_parameters,
                     **problem_parameters
                 }.items()
-                #for parameter_id, parameter_value in problem_parameters.items()
                 if parameter_id not in petab_problem.condition_df.columns
             }
             removed_problem_parameters = \
@@ -138,13 +139,6 @@ def simulate_timecourse(
                 f'timecourse: {removed_problem_parameters}'
             )
 
-            #notpositive = {
-            #    k: v
-            #    for k, v in subset_problem_parameters.items()
-            #    if v <= 0
-            #}
-            #print(f'not positive parameters: {notpositive}')  # FIXME
-
             amici.parameter_mapping.fill_in_parameters(
                 edatas=amici_edatas,
                 problem_parameters=subset_problem_parameters,
@@ -154,22 +148,12 @@ def simulate_timecourse(
             )
         else:
             subset_problem_parameters = None
-        #amici_model.setParameterById(problem_parameters)
-        #parameters = [
-        #    problem_parameters[parameter_id]
-        #    for parameter_id in amici_model.getParameterIds()
-        #]
-        #amici_edatas = create_edatas(amici_model, petab_problem)
-        #one(amici_edatas).parameters = parameters
-        #print(3)
 
         if results:
             one(amici_edatas).x0  = one(results[-1]['rdatas']).x[-1].flatten()
             one(amici_edatas).sx0 = one(results[-1]['rdatas']).sx[-1].flatten()
         elif initial_states is not None:
             # TODO untested
-            #print(initial_states)
-            #print(amici_model.getStateIds())
             if isinstance(initial_states, dict):
                 indexed_initial_states = [
                     initial_states[state_id]
@@ -177,11 +161,7 @@ def simulate_timecourse(
                 ]
             else:
                 indexed_initial_states = initial_states
-            #print(indexed_initial_states)
-            #print(amici_model.getStateIds())
-            #print(4)
             one(amici_edatas).x0 = indexed_initial_states
-            #print(5)
 
         amici_solver = amici_model.getSolver()
         # TODO allow a user to specify these settings
@@ -191,31 +171,7 @@ def simulate_timecourse(
         if solver_settings is not None:
             for setter, value in solver_settings.items():
                 getattr(amici_solver, setter)(value)
-        #print(4)
-        #amici_solver.setSensitivityOrder(amici.SensitivityOrder_first)
-        #amici_solver.setSensitivityMethod(amici.SensitivityMethod_forward)
-        #amici_solver.setMaxSteps(int(1e6))
 
-        #solver_settings = {
-        #    'setSensitivityOrder': amici.SensitivityOrder_first,
-        #    'setSensitivityMethod': amici.SensitivityMethod_forward,
-        #    'setMaxSteps': int(1e6),
-        #    'setMaxTime': 60,
-        #}
-
-        #amici_solver.setAbsoluteTolerance(1e-8)
-        #amici_solver.setRelativeTolerance(1e-6)
-        #amici_solver.setAbsoluteToleranceFSA(1e-8)
-        #amici_solver.setRelativeToleranceFSA(1e-6)
-
-        #print(one(amici_edatas).parameters)
-        #import functools
-        #sp = lambda x: simulate_petab(
-        #    petab_problem=petab_problem,
-        #    amici_model=amici_model,
-        #    solver=amici_solver,
-        #    problem_parameters=x,
-        #)
         results.append(simulate_petab(
             petab_problem=petab_problem,
             amici_model=amici_model,
@@ -223,10 +179,7 @@ def simulate_timecourse(
             edatas=amici_edatas,
             problem_parameters=subset_problem_parameters,
         ))
-        #print(5)
 
-        #print(problem_parameters)
-        #print(results)
         if initial_states is not None:
             pass
         for old_parameter_id, new_parameter_id in replace_timecourse_parameters.items():
@@ -239,23 +192,205 @@ def simulate_timecourse(
 
 # Collect
 def collect_x(results):
-    return list(chain.from_iterable([
-        rdata.x[:, 0].flatten()
-        for result in results
-        for rdata in result['rdatas']
-    ]))
+    return np.concatenate(
+        [
+            rdata.x
+            for result in results
+            for rdata in result['rdatas']
+        ],
+        axis=0,
+    )
+
 
 # Collect simulated forward sensitivities.
 def collect_sx(results):
-    return list(chain.from_iterable([
-        rdata.sx[:, 0, :].flatten()
-        for result in results
-        for rdata in result['rdatas']
-    ]))
+    return np.concatenate(
+        [
+            rdata.sx
+            for result in results
+            for rdata in result['rdatas']
+        ],
+        axis=0,
+    )
+
 
 def collect_t(results):
-    return list(chain.from_iterable([
-        rdata.ts
-        for result in results
-        for rdata in result['rdatas']
-    ]))
+    return np.concatenate(
+        [
+            rdata.ts
+            for result in results
+            for rdata in result['rdatas']
+        ],
+        axis=0,
+    )
+
+
+def remove_duplicates(T, *args):
+    """Remove duplicated time points from AMICI results.
+
+    Results are expected to be in the form provided by the methods
+    - `collect_t`
+    - `collect_x`
+    - `collect_sx`
+
+    Args:
+        T:
+            The vector of time with duplicates. Values at the indices
+            corresponding to duplicates values in `T` will be removed from
+            `T` and all other vectors. `T` is assumed to be sorted/monotonic.
+        args:
+            Other vectors that duplicates will be removed from.
+
+    Returns:
+        Deduplicated vectors, in the order provided in `args`.
+    """
+    t0 = None
+    duplicated_indices = []
+    for index, t in enumerate(T):
+        if t0 is None:
+            t0 = t
+            continue
+        if t == t0:
+            duplicated_indices.append(index)
+        t0 = t
+    T = np.delete(T, obj=duplicated_indices, axis=0)
+    deduplicated_vectors = [
+        np.delete(vector, obj=duplicated_indices, axis=0)
+        for vector in args
+    ]
+    return [T, *deduplicated_vectors]
+
+
+def precreate_edata_periods(
+    amici_model: amici.Model,
+    petab_problems: List[petab.Problem],
+) -> List[amici.ExpData]:
+    """Precreate AMICI ExpData objects for PEtab problems with one AMICI model.
+
+    As this is for a timecourse, which only simulates one condition at a time,
+    this is a list of one AMICI ExpData object per timecourse period.
+
+    Args:
+        amici_model:
+            The AMICI model.
+        petab_problems:
+            The PEtab problems.
+
+    Returns:
+        The AMICI ExpData objects. The outer list is over PEtab problems,
+        the inner list is over PEtab problem conditions.
+    """
+    edata_periods = []
+    for petab_problem in petab_problems:
+        # TODO precreate simulation conditions?
+        edata = only(
+            amici.petab_objective.create_edatas(
+                amici_model=amici_model,
+                petab_problem=petab_problem,
+            ),
+            amici.ExpData(amici_model),
+        )
+        edata_periods.append(edata)
+    return edata_periods
+
+
+def precreate_parameter_mapping_periods(
+    amici_model: amici.Model,
+    petab_problems: List[petab.Problem],
+    timecourse_id: str = None,
+) -> List[List[ParameterMapping]]:
+    """Precreate AMICI parameter mapping objects for PEtab problems.
+
+    NB: The parameter mapping will be for unscaled (linear) values.
+
+    Args:
+        amici_model:
+            The governing model.
+        petab_problems:
+            The PEtab problems.
+        timecourse_id:
+            The ID of the timecourse.
+
+    Returns:
+        The AMICI parameter mapping objects. The outer list is over PEtab
+        problems, the inner list is over PEtab problem conditions.
+    """
+    parameter_mapping_periods = []
+    for petab_problem in petab_problems:
+        # Create dummy measurement df, for timecourse periods
+        # that happen to have no measurements.
+        # This is a quickfix to ensure that things like parameter
+        # scaled etc. are in the parameter mapping.
+        # FIXME check if gradients etc are still correct with this
+        dummy_petab_problem = copy.deepcopy(petab_problem)
+        if dummy_petab_problem.measurement_df.empty:
+            dummy_petab_problem.measurement_df = (
+                dummy_petab_problem.measurement_df.append(
+                    {
+                        OBSERVABLE_ID: (
+                            dummy_petab_problem
+                            .observable_df
+                            .iloc[0]
+                            .name
+                        ),
+                        SIMULATION_CONDITION_ID: timecourse_id,
+                        TIME: 0.1,
+                        MEASUREMENT: 0.1,
+                    },
+                    ignore_index=True,
+                )
+            )
+        parameter_mapping = amici.petab_objective.create_parameter_mapping(
+            petab_problem=dummy_petab_problem,
+            simulation_conditions=[{SIMULATION_CONDITION_ID: timecourse_id}],
+            scaled_parameters=True,
+            amici_model=amici_model,
+        )
+        parameter_mapping_periods.append(parameter_mapping)
+    return parameter_mapping_periods
+
+
+def add_output_timepoints_if_missing(
+    amici_edata: amici.ExpData,
+    timepoints: List[float],
+):
+    all_timepoints = np.array(amici_edata.getTimepoints())
+    all_data = list(amici_edata.getObservedData())
+    all_data_std = list(amici_edata.getObservedDataStdDev())
+
+    n_observables = amici_edata.nytrue()
+    for timepoint in timepoints:
+        if timepoint in all_timepoints:
+            continue
+        # AMICI timepoints must be sorted in ascending order,
+        # find the position where the timepoint is greater than
+        # the previous value, and lesser than the next value.
+        if (timepoint < all_timepoints).all():
+            timepoint_index = 0
+        elif (timepoint > all_timepoints).all():
+            timepoint_index = all_timepoints.size
+        # Timepoint should be somewhere in the middle of the list
+        else:
+            timepoint_index = 1 + one(one(np.where(
+                (all_timepoints < timepoint)[:-1] !=
+                (all_timepoints < timepoint)[1:]
+            )))
+        # Insert timepoint and dummy data
+        all_timepoints = np.insert(
+            all_timepoints,
+            timepoint_index,
+            timepoint,
+        )
+        for _ in range(n_observables):
+            all_data.insert(
+                timepoint_index * n_observables,
+                np.nan,
+            )
+            all_data_std.insert(
+                timepoint_index * n_observables,
+                np.nan,
+            )
+
+    amici_edata.setTimepoints(all_timepoints)
+    amici_edata.setObservedData(all_data)
+    amici_edata.setObservedDataStdDev(all_data_std)

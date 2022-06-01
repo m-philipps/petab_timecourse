@@ -4,11 +4,13 @@ from .version import __version__
 from .C import *
 
 from .timecourse import (
+    Period,
     Timecourse,
 )
 
 from .format import (
     import_directory_of_componentwise_files,
+    # FIXME move to .petab?
     get_timecourse_df,
 )
 
@@ -28,3 +30,7 @@ from .amici import (
 from .pypesto import (
     TimecourseObjective,
 )
+
+from .problem import Problem
+
+from .simulator import Simulator

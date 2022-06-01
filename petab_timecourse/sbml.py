@@ -1,8 +1,11 @@
-from typing import Any, Dict, Optional, Union
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+import warnings
 
 import libsbml
 import pandas as pd
 import petab
+from more_itertools import one
 from slugify import slugify
 
 #from .timecourse import Timecourse
@@ -12,6 +15,7 @@ from .C import (
     TIMECOURSE,
 )
 from .misc import parse_timecourse_string
+from .timecourse import Timecourse
 
 
 def add_event(
@@ -55,17 +59,41 @@ def add_event(
         event_assignment.setMath(event_assignment_math)
 
 
+def set_condition_parameters_not_constant(
+    petab_problem: petab.Problem,
+):
+    """
+    NB: changes the SBML model object inplace.
+    """
+    all_parameters = [
+        parameter.getId()
+        for parameter in petab_problem.sbml_model.getListOfParameters()
+    ]
+    parameter_ids = []
+    for id in petab_problem.condition_df.columns:
+        if id in all_parameters:
+            parameter_ids.append(id)
+    for parameter_id in parameter_ids:
+        parameter = petab_problem.sbml_model.getParameter(parameter_id)
+        parameter.setConstant(False)
+
+
+def set_timecourse_parameters_not_constant(
+    petab_problem: petab.Problem,
+    timecourse: Timecourse,
+):
+    """
+    NB: changes the SBML model object inplace.
+    """
+    warnings.warn('Setting all condition parameters not constant.')
+    set_condition_parameters_not_constant(petab_problem=petab_problem)
+
+
 def add_timecourse_as_events(
         petab_problem: petab.Problem,
-        #sbml_path: TYPE_PATH,
         timecourse_id: str = None,
         output_path: Optional[TYPE_PATH] = None,
 ):
-    #sbml_path = str(sbml_path)
-    #if output_path is None:
-    #    output_path = sbml_path
-    #output_path = str(output_path)
-
     if timecourse_id is None:
         try:
             timecourse_id = one(petab_problem.timecourse_df.index)
@@ -75,12 +103,7 @@ def add_timecourse_as_events(
                 'timecourses in the PEtab problem timecourse table.'
             )
 
-    #sbml_document = libsbml.SBMLReader().readSBML(sbml_path)
     sbml_model = petab_problem.sbml_document.getModel()
-    #if sbml_model is None:
-    #    raise ValueError(
-    #        'An SBML model could not be reproduced from the SBML file.'
-    #    )
 
     timecourse = parse_timecourse_string(
         petab_problem.timecourse_df.loc[timecourse_id][TIMECOURSE],
@@ -97,7 +120,7 @@ def add_timecourse_as_events(
         )
 
     if output_path is not None:
-        libsbml.writeSBMLToFile(sbml_document, str(output_path))
+        libsbml.writeSBMLToFile(petab_problem.sbml_document, str(output_path))
 
     return sbml_model
 

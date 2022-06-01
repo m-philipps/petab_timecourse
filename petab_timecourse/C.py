@@ -4,11 +4,14 @@ from typing import Union
 
 import petab.C
 
+
 TIMECOURSE = 'timecourse'
 TIMECOURSE_ID = 'timecourseId'
-TIME_CONDITION_DELIMETER = ':'
-TIMECOURSE_ITEM_DELIMETER = ';'
+TIME_CONDITION_DELIMITER = ':'
+PERIOD_DELIMITER = ';'
 TIMECOURSE_NAME = 'timecourseName'
+PERIOD = 'period'
+PERIODS = 'periods'
 
 
 # Parameterwise file values.

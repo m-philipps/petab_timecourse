@@ -21,14 +21,16 @@ from .C import (
     TIMECOURSE_ID,
     TIMECOURSE_NAME,
     TYPE_PATH,
-    TIME_CONDITION_DELIMETER,
-    TIMECOURSE_ITEM_DELIMETER,
+    TIME_CONDITION_DELIMITER,
+    PERIOD_DELIMITER,
 )
-#from .misc import get_path
 from .format_parameterwise import (  # FIXME: refactor to remove dependency
     Regimen,
     Regimens,
 )
+# FIXME remove imports from format.py
+# FIXME remove references to this
+from .timecourse import get_timecourse_df
 
 
 def deduplicate_conditions(conditions: Sequence[Condition]) -> Sequence[str]:
@@ -81,8 +83,8 @@ def import_directory_of_componentwise_files(
         deduplicate_conditions(list(conditions_with_times.values()))
     timecourse_df = pd.DataFrame(data={
         TIMECOURSE_ID: [f'{timecourse_id}'],
-        TIMECOURSE: [TIMECOURSE_ITEM_DELIMETER.join([
-            f'{timepoint}{TIME_CONDITION_DELIMETER}{condition_id}'
+        TIMECOURSE: [PERIOD_DELIMITER.join([
+            f'{timepoint}{TIME_CONDITION_DELIMITER}{condition_id}'
             for timepoint, condition_id in \
                 zip(conditions_with_times, condition_sequence)
         ])],
@@ -93,13 +95,12 @@ def import_directory_of_componentwise_files(
             'Something went wrong with importing the componentwise timecourse.'
             'Multiple timecourses were created.'
         )
-    #timecourse = Timecourse(timecourse_df.iloc[1])
 
     # TODO duplicated from "to_petab_files"...
     condition_df = pd.DataFrame(data=[
         {
             **{
-                CONDITION_ID: condition.id,
+                CONDITION_ID: condition.condition_id,
                 CONDITION_NAME: condition.name,
             },
             **dict(condition),
@@ -112,63 +113,11 @@ def import_directory_of_componentwise_files(
 
     return timecourse_df, condition_df
 
-    #return Timecourse(timecourse_df.iloc[1]), condition_df
-    #for timecourse_id, timecourse_row in in timecourse_df.iterrows():
-    #return Timecourse
-    #breakpoint()
-    #return Timecourse(
-    #    id='from_componentwise',
-    #    timepoints=conditions_with_times.keys(),
-    #    conditions=[
-    #        Condition(pd.Series(data={
-    #            CONDITION_ID: directory.parts[-1],
-    #            #**dict(zip(regimens.targets, condition)),
-    #            **condition,
-    #        }))
-    #        for condition in conditions_with_times.values()
-    #    ],
-    #)
-
-
 
 def from_petab(yaml_location: TYPE_PATH) -> Timecourse:
     # TODO
     yaml_location = Path(yaml_location)
     pass
-
-
-def get_timecourse_df(
-        timecourse_file: Union[str, pd.DataFrame, None]
-) -> pd.DataFrame:
-    """Read the provided condition file into a ``pandas.Dataframe``
-    Conditions are rows, parameters are columns, conditionId is index.
-    Arguments:
-        condition_file: File name of PEtab condition file or pandas.Dataframe
-    """
-    if timecourse_file is None:
-        return timecourse_file
-
-    if isinstance(timecourse_file, str) or isinstance(timecourse_file, Path):
-        timecourse_file = pd.read_csv(
-            timecourse_file,
-            sep='\t',
-            float_precision='round_trip',
-        )
-
-    petab.lint.assert_no_leading_trailing_whitespace(
-        timecourse_file.columns.values, "timecourse"
-    )
-
-    if not isinstance(timecourse_file.index, pd.RangeIndex):
-        timecourse_file.reset_index(inplace=True)
-
-    try:
-        timecourse_file.set_index([TIMECOURSE_ID], inplace=True)
-    except KeyError:
-        raise KeyError(
-            f'Timecourse table missing mandatory field {TIMECOURSE_ID}.')
-
-    return timecourse_file
 
 
 def to_petab_dataframes(timecourse: Timecourse) -> Dict[str, pd.DataFrame]:
@@ -186,7 +135,7 @@ def to_petab_dataframes(timecourse: Timecourse) -> Dict[str, pd.DataFrame]:
     """
     condition_df = pd.DataFrame(data=[
         dict(
-            CONDITION_ID=condition.id,
+            CONDITION_ID=condition.condition_id,
             CONDITION_NAME=condition.name,
             **dict(condition),
         )
@@ -198,9 +147,9 @@ def to_petab_dataframes(timecourse: Timecourse) -> Dict[str, pd.DataFrame]:
 
     timecourse_df = pd.DataFrame(data=[
         dict(
-            TIMECOURSE_ID=timecourse.id,
-            TIMECOURSE=TIMECOURSE_ITEM_DELIMETER.join([
-                f'{timepoint}{TIME_CONDITION_DELIMETER}{condition.id}'
+            TIMECOURSE_ID=timecourse.timecourse_id,
+            TIMECOURSE=TIMECOURSE_ITEM_DELIMITER.join([
+                f'{timepoint}{TIME_CONDITION_DELIMITER}{condition.condition_id}'
                 for timepoint, condition in timecourse.items()
             ]),
         )
@@ -213,7 +162,6 @@ def to_petab_dataframes(timecourse: Timecourse) -> Dict[str, pd.DataFrame]:
         CONDITION: condition_df,
         TIMECOURSE: timecourse_df,
     }
-
 
 
 def write_timecourse_df(
