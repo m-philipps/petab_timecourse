@@ -6,7 +6,7 @@ import copy
 from dataclasses import dataclass
 from itertools import chain
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, TextIO, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Sequence, TextIO, Tuple, Union
 
 import amici
 import numpy as np
@@ -103,44 +103,53 @@ class Timecourse:
 
     @staticmethod
     def from_timecourses(
-        timecourses: List['Timecourse'],
-        last_measured_timepoint: bool = False,
-        last_measured_timepoints: List[float] = None,
+        timecourses: Sequence['Timecourse'],
+        durations: Sequence[float],
         *args,
         **kwargs,
     ) -> 'Timecourse':
-        periods = []
+        """Create a timecourse from a sequence of timecourses.
 
-        if last_measured_timepoint and last_measured_timepoints is None:
+        Args:
+            timecourses:
+                The sequence of timecourses.
+            durations:
+                The duration of each timecourse except the last. Timecourses
+                will be truncated if their total duration exceeds the duration
+                specified here.
+            *args, **kwargs:
+                Passed to the `Timecourse.__init__` constructor.
+        """
+        if len(durations) != len(timecourses) - 1:
             raise ValueError(
-                'Please provide the `last_measured_timepoints` if joining '
-                'timecourses by their `last_measured_timepoint`.'
+                'Please specify one fewer durations than timecourses. The '
+                'duration of the final timecourse will be unlimited.'
             )
 
-        continuing_periods = [
-            copy.deepcopy(timecourse.periods[-1])
-            for timecourse in timecourses[:-1]
-        ]
-
-        if last_measured_timepoint:
-            for (
-                timecourse, continuing_period, total_duration
-            ) in zip(
-                timecourses, continuing_periods, last_measured_timepoints,
-            ):
-                cumulative_duration_penultimate_period = sum(
-                    period.duration
-                    for period in timecourse.periods[:-1]
-                )
-                continuing_period.duration = (
-                    total_duration - cumulative_duration_penultimate_period
-                )
+        periods = []
 
         for timecourse_index, timecourse in enumerate(timecourses):
-            timecourse_periods = timecourse.periods
-            if timecourse_index < len(timecourses) - 1:
-                timecourse_periods[-1] = continuing_periods[timecourse_index]
-            periods.extend(timecourse_periods)
+            # Simply add all periods from the last timecourse.
+            if timecourse_index == len(durations):
+                periods.extend(timecourse.periods)
+                continue
+
+            total_timecourse_duration = durations[timecourse_index]
+            timecourse_duration = 0
+
+            # Add only the periods that don't exceed the duration of the timecourse.
+            for period in timecourse.periods:
+                period_duration = period.duration
+
+                # Truncate at period that exceeds the total duration.
+                if period.duration + timecourse_duration > total_timecourse_duration:
+                    period = copy.deepcopy(period)
+                    period.duration = total_timecourse_duration - timecourse_duration
+                    periods.append(period)
+                    break
+
+                timecourse_duration += period.duration
+                periods.append(period)
 
         return Timecourse(
             periods=periods,

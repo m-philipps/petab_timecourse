@@ -190,7 +190,6 @@ def simulate_timecourse(
     return results
 
 
-# Collect
 def collect_x(results):
     return np.concatenate(
         [
@@ -202,11 +201,32 @@ def collect_x(results):
     )
 
 
-# Collect simulated forward sensitivities.
 def collect_sx(results):
     return np.concatenate(
         [
             rdata.sx
+            for result in results
+            for rdata in result['rdatas']
+        ],
+        axis=0,
+    )
+
+
+def collect_y(results):
+    return np.concatenate(
+        [
+            rdata.y
+            for result in results
+            for rdata in result['rdatas']
+        ],
+        axis=0,
+    )
+
+
+def collect_sy(results):
+    return np.concatenate(
+        [
+            rdata.sy
             for result in results
             for rdata in result['rdatas']
         ],

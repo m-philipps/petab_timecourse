@@ -155,11 +155,65 @@ class AmiciSimulator(Simulator):
             amici_model=self.amici_model,
             petab_problems=self.petab_problem_periods,
         )
-        self.parameter_mapping_periods = precreate_parameter_mapping_periods(
+        self.parameter_mapping_periods_base = precreate_parameter_mapping_periods(
             amici_model=self.amici_model,
             petab_problems=self.petab_problem_periods,
             timecourse_id=self.timecourse.timecourse_id,
         )
+        self.reset_parameter_mapping()
+
+    def replace_in_parameter_mapping(
+        self,
+        replacements: Dict[str, float],
+        scaled: bool = False,
+    ):
+        """Replace parameters in the parameter mapping with specific values.
+
+        For example, some species `species_x` may take the parameter `initial_species_x`
+        as its initial value. This method can be used to replace `initial_species_x`
+        with a specific value.
+
+        Args:
+            replacements:
+                Keys are IDs, values are the values that will replace the IDs.
+            scaled:
+                Whether all values in `replacements` are on the scales defined in the
+                parameter mapping. If not, values are assumed to be on linear scale will
+                be scaled.
+        """
+        # Replace everywhere in the parameter mapping
+        for parameter_mapping_period in self.parameter_mapping_periods:
+            for parameter_mapping_for_condition in parameter_mapping_period:
+                for mapping_attr in ['map_sim_var', 'map_preeq_fix', 'map_sim_fix']:
+                    setattr(parameter_mapping_for_condition, mapping_attr, {
+                        k: (
+                            # If replaceable, replace
+                            (
+                                replacements[v]
+                                if scaled
+                                # Rescale replacement if necessary
+                                else petab.parameters.scale(
+                                    parameter=replacements[v],
+                                    scale_str=getattr(
+                                        parameter_mapping_for_condition,
+                                        'scale_' + mapping_attr,
+                                    )[k],
+                                )
+                            )
+                            if v in replacements
+                            # Else use current value
+                            else v
+                        )
+                        for k, v in getattr(
+                            parameter_mapping_for_condition,
+                            mapping_attr,
+                        ).items()
+                    })
+
+
+    def reset_parameter_mapping(self):
+        """Reset to undo previous customizations of the parameter mapping."""
+        self.parameter_mapping_periods = copy.deepcopy(self.parameter_mapping_periods_base)
 
     def problem_parameters_to_vector(
         self,
@@ -378,10 +432,7 @@ class AmiciSimulator(Simulator):
             # FIXME resolve this properly. Is it due to timecourse pieces
             #       that are defined to occur after the last measured time
             #       point?
-            if period_index == len(self.timecourse.periods) - 1:
-                raise NotImplementedError(
-                    'Implement handling of empty measurements tables now.'
-                )
+            pass
         # NOTE removed replacement of control parameters with ID of time-period-specific
         #       control parameter
 
