@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Sequence, Tuple, Union
 import warnings
 
 import amici
-from amici.petab_import import import_petab_problem
+import amici.petab_import
 from amici.petab_objective import (
     RDATAS,
 )
