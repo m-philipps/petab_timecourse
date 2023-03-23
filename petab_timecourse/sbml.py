@@ -58,6 +58,22 @@ def add_event(
             libsbml.parseL3Formula(str(event_assignment_formula))
         event_assignment.setMath(event_assignment_math)
 
+        if variable in [p.getId() for p in sbml_model.getListOfParameters()]:
+            set_parameter_as_not_constant(
+                sbml_model=sbml_model,
+                parameter_id=variable,
+            )
+
+def set_parameter_as_not_constant(
+    sbml_model: libsbml.Model,
+    parameter_id: str,
+):
+    """
+    NB: changes the SBML model object inplace.
+    """
+    parameter = sbml_model.getParameter(parameter_id)
+    parameter.setConstant(False)
+
 
 def set_condition_parameters_not_constant(
     petab_problem: petab.Problem,
@@ -90,9 +106,9 @@ def set_timecourse_parameters_not_constant(
 
 
 def add_timecourse_as_events(
-        petab_problem: petab.Problem,
-        timecourse_id: str = None,
-        output_path: Optional[TYPE_PATH] = None,
+    petab_problem: petab.Problem,
+    timecourse_id: str = None,
+    output_path: Optional[TYPE_PATH] = None,
 ):
     if timecourse_id is None:
         try:
@@ -103,17 +119,21 @@ def add_timecourse_as_events(
                 'timecourses in the PEtab problem timecourse table.'
             )
 
-    sbml_model = petab_problem.sbml_document.getModel()
+    sbml_model = petab_problem.model.sbml_document.getModel()
 
-    timecourse = parse_timecourse_string(
-        petab_problem.timecourse_df.loc[timecourse_id][TIMECOURSE],
+    timecourse = Timecourse.from_df(
+        timecourse_df=petab_problem.timecourse_df,
+        timecourse_id=timecourse_id,
     )
+    #timecourse = parse_timecourse_string(
+    #    petab_problem.timecourse_df.loc[timecourse_id][TIMECOURSE],
+    #)
 
-    for time, condition_id in timecourse:
+    for timepoint, condition_id in zip(timecourse.timepoints, timecourse.condition_ids):
         add_event(
             sbml_model=sbml_model,
-            event_id=get_slug(time),
-            trigger_formula=f'time >= {time}',
+            event_id=get_slug(timepoint),
+            trigger_formula=f'time >= {timepoint}',
             event_assignments=Condition(
                 petab_problem.condition_df.loc[condition_id],
             ),

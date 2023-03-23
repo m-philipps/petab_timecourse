@@ -21,7 +21,7 @@ from petab.C import (
     MEASUREMENT,
     OBSERVABLE_ID,
 )
-from pypesto.objective.amici_util import create_identity_parameter_mapping
+from pypesto.objective.amici.amici_util import create_identity_parameter_mapping
 
 from .misc import (
     get_timecourse,
@@ -150,6 +150,7 @@ def simulate_timecourse(
             subset_problem_parameters = None
 
         if results:
+            one(amici_edatas).tstart_ = timecourse.timepoints[index]
             one(amici_edatas).x0  = one(results[-1]['rdatas']).x[-1].flatten()
             one(amici_edatas).sx0 = one(results[-1]['rdatas']).sx[-1].flatten()
         elif initial_states is not None:

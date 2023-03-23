@@ -11,7 +11,7 @@ from pypesto.C import (
     FVAL,
     GRAD,
 )
-from pypesto.objective.amici_util import create_identity_parameter_mapping
+from pypesto.objective.amici.amici_util import create_identity_parameter_mapping
 from pypesto.petab import PetabImporter
 
 from .amici import simulate_timecourse

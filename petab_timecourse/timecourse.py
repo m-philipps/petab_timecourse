@@ -100,6 +100,16 @@ class Timecourse:
         self.periods = periods
         self.t0 = t0
 
+    @property
+    def timepoints(self):
+        _timepoints = [self.t0]
+        for period in self.periods:
+            _timepoints.append(_timepoints[-1] + period.duration)
+        return _timepoints
+
+    @property
+    def condition_ids(self):
+        return [period.condition_id for period in self.periods]
 
     @staticmethod
     def from_timecourses(

@@ -18,7 +18,7 @@ from petab.C import (
     LIN,
     PARAMETER_ID,
 )
-from pypesto.objective.amici_util import create_identity_parameter_mapping
+#from pypesto.objective.amici_util import create_identity_parameter_mapping
 
 from .C import (
     PERIODS,
@@ -122,13 +122,11 @@ class AmiciSimulator(Simulator):
     """AMICI simulator for PEtab timecourses."""
     def __init__(
         self,
-        petab_problem: petab.Problem,
-        timecourse_id: str = None,
+        amici_model: amici.Model = None,
+        amici_solver: amici.Solver = None,
+        **kwargs,
     ):
-        super().__init__(
-            petab_problem=petab_problem,
-            timecourse_id=timecourse_id,
-        )
+        super().__init__(**kwargs)
 
         if float(self.t0) != 0:
             raise NotImplementedError(
@@ -143,11 +141,15 @@ class AmiciSimulator(Simulator):
         # change, and the times they change?
 
         # TODO custom model setters/getters
-        self.amici_model = amici.petab_import.import_petab_problem(
-            self.petab_problem,
-        )
+        self.amici_model = amici_model
+        if self.amici_model is None:
+            self.amici_model = amici.petab_import.import_petab_problem(
+                self.petab_problem,
+            )
         # TODO custom solver setters/getters
-        self.amici_solver = self.amici_model.getSolver()
+        self.amici_solver = amici_solver
+        if self.amici_solver is None:
+            self.amici_solver = self.amici_model.getSolver()
         # FIXME set `edata.plist` to only compute derivatives
         # for relevant parameters in each period
         # FIXME set pscale here to all linear
@@ -468,6 +470,7 @@ class AmiciSimulator(Simulator):
             ]
         )
 
+        #breakpoint()
         result = amici.petab_objective.simulate_petab(
             petab_problem=petab_problem,
             amici_model=self.amici_model,
