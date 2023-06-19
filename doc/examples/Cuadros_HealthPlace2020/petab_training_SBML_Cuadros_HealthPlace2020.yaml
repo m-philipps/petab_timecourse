@@ -4,12 +4,15 @@ problems:
 - condition_files:
   - experimentalCondition_Cuadros_HealthPlace2020.tsv
   measurement_files:
-  - measurementData_training_Cuadros_HealthPlace2020.tsv
+  - simulation_df.tsv
   observable_files:
   - observable_Cuadros2020.tsv
   sbml_files:
   - SBML_Cuadros_HealthPlace2020.xml
   visualization_files:
   - visualizationSpecifications_Cuadros_HealthPlace2020.tsv
- 
- 
+extensions:
+  timecourse:
+    format_version: 1
+    timecourse_files:
+    - timecourse.tsv

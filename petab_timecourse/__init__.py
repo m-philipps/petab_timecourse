@@ -22,15 +22,9 @@ from .misc import (
 )
 
 
-from . import amici
-from .amici import (
-    simulate_timecourse,
+from .problem import (
+    Problem,
+    get_models,
 )
 
-from .pypesto import (
-    TimecourseObjective,
-)
-
-from .problem import Problem
-
-from .simulator import Simulator
+#from .simulator import Simulator

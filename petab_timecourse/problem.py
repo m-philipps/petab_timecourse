@@ -8,7 +8,7 @@ from itertools import chain
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, TextIO, Tuple, Union
 
-import amici
+#import amici
 import numpy as np
 import pandas as pd
 import petab
@@ -32,10 +32,33 @@ from .C import (
 )
 from .format import get_timecourse_df
 
+from .sbml import add_timecourse_as_events
+
 
 class Problem:
     @staticmethod
-    def from_yaml(*args, timecourse_file: str, **kwargs):
+    def from_yaml(*args, **kwargs):
         problem = petab.Problem.from_yaml(*args, **kwargs)
-        problem.timecourse_df = get_timecourse_df(timecourse_file)
+
+        timecourse_files = problem.extensions_config['timecourse']['timecourse_files']
+        if len(timecourse_files) > 1:
+            raise ValueError("multiple timecourse files are not yet supported.")
+        if len(timecourse_files) < 1:
+            raise ValueError("no timecourse files?")
+
+        from pathlib import Path
+        root_path = Path(args[0]).parent
+        timecourse_df = get_timecourse_df(root_path / timecourse_files[0])
+
+        problem.timecourse_df = timecourse_df
         return problem
+
+
+def get_models(problem: petab.Problem):
+    models = {}
+    for timecourse_id in problem.timecourse_df.index:
+        models[timecourse_id] = add_timecourse_as_events(
+            problem,
+            timecourse_id=timecourse_id,
+        )
+    return models
