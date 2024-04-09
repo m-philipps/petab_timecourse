@@ -24,8 +24,8 @@ from typing import Sequence, Tuple
 from warnings import warn
 
 import amici
-from amici.petab_import import import_petab_problem
-from amici.petab_objective import simulate_petab
+from amici.petab import import_petab_problem
+from amici.petab import simulate_petab
 import numpy as np
 import pandas as pd
 import petab
@@ -199,7 +199,7 @@ def petab_yaml_path(yaml2sbml_model_string):
 
 def test_model(petab_yaml_path):
     petab_problem = petab.Problem.from_yaml(str(petab_yaml_path))
-    model = import_petab_problem(petab_problem, force_compile=False)  # FIXME force_compile True
+    model = import_petab_problem(petab_problem, compile_=None)  # FIXME compile_ True
     solver = model.getSolver()
     solver.setSensitivityOrder(1)
     solver.setSensitivityMethod(1)
@@ -213,7 +213,7 @@ def test_model(petab_yaml_path):
         model.setTimepoints(
             np.linspace(t_start, t_end, OUTPUT_DENSITY*(t_end-t_start) + 1)
         )
-        model.setParameterById({'q_': q_})
+        model.setFixedParameterById('q_', q_)
     
         # Continue the next sub-simulation from the previous simulation.
         if rdatas:
