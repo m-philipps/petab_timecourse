@@ -33,31 +33,31 @@ from .format_parameterwise import (  # FIXME: refactor to remove dependency
 from .timecourse import get_timecourse_df
 
 
-def deduplicate_conditions(conditions: Sequence[Condition]) -> Sequence[str]:
-    # Sort all conditions by column name, such that after conversion to string
-    # they can be compared.
-    sorted_conditions = [
-        {
-            component: condition[component]
-            for component in sorted(condition)
-        }
-        for condition in conditions
-    ]
+def get_timecourse_condition_id(condition_index: str, timecourse_id: str) -> str:
+    return f'condition_{condition_index}'
 
+
+def deduplicate_conditions(
+    conditions: Sequence[Condition],
+    timecourse_id: str,
+) -> Sequence[str]:
     # Identify earliest index that is a duplicate of a later index in the list
     # of condition dictionaries.
     _, unique_indices, duplicated_indices = np.unique(
-        np.array(sorted_conditions).astype(str),
+        np.array(conditions).astype(str),
         return_index=True,
         return_inverse=True,
     )
 
     unique_sequence = [unique_indices[i] for i in duplicated_indices]
     unique_conditions = {
-        conditions[i].id: conditions[i]
+        get_timecourse_condition_id(
+            condition_index=i,
+            timecourse_id=timecourse_id,
+        ): conditions[i]
         for i in unique_sequence
     }
-    condition_sequence = [conditions[i].id for i in unique_sequence]
+    condition_sequence = [conditions[i] for i in unique_sequence]
     return unique_conditions, condition_sequence
 
 
@@ -75,17 +75,19 @@ def import_directory_of_componentwise_files(
     })
     conditions_with_times = regimens.as_conditions()
     for index, (time, condition) in enumerate(conditions_with_times.items()):
-        conditions_with_times[time] = Condition(pd.Series(
-            data=condition,
-            name=f'{timecourse_id}_condition_{index}',
-        ))
-    unique_conditions, condition_sequence = \
-        deduplicate_conditions(list(conditions_with_times.values()))
+        conditions_with_times[time] = Condition(
+            row=pd.Series(data=condition),
+            condition_id=f'condition_{index}',
+        )
+    unique_conditions, condition_sequence = deduplicate_conditions(
+        list(conditions_with_times.values()),
+        timecourse_id=timecourse_id,
+    )
     timecourse_df = pd.DataFrame(data={
         TIMECOURSE_ID: [f'{timecourse_id}'],
         TIMECOURSE: [PERIOD_DELIMITER.join([
-            f'{timepoint}{TIME_CONDITION_DELIMITER}{condition_id}'
-            for timepoint, condition_id in \
+            f'{timepoint}{TIME_CONDITION_DELIMITER}{condition.condition_id}'
+            for timepoint, condition in \
                 zip(conditions_with_times, condition_sequence)
         ])],
     })
@@ -96,20 +98,26 @@ def import_directory_of_componentwise_files(
             'Multiple timecourses were created.'
         )
 
+    print(timecourse_df)
     # TODO duplicated from "to_petab_files"...
+    print(unique_conditions)
     condition_df = pd.DataFrame(data=[
         {
             **{
-                CONDITION_ID: condition.condition_id,
-                CONDITION_NAME: condition.name,
+                CONDITION_ID: condition_id,
+                #CONDITION_NAME: condition.name,
             },
-            **dict(condition),
+            **condition,
         }
-        for condition in unique_conditions.values()
+        for condition_id, condition in unique_conditions.items()
     ])
-    if set(condition_df[CONDITION_NAME]) is None:
-        condition_df.drop(CONDITION_NAME)
+    print(condition_df)
+    #if set(condition_df[CONDITION_NAME]) is None:
+    #    condition_df.drop(CONDITION_NAME)
     condition_df = petab.get_condition_df(condition_df)
+
+    print(condition_df)
+    print(timecourse_df)
 
     return timecourse_df, condition_df
 

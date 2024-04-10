@@ -18,6 +18,12 @@ from .misc import parse_timecourse_string
 from .timecourse import Timecourse
 
 
+def remove_rules(variable: str, sbml_model: libsbml.Model):
+    while sbml_model.removeRuleByVariable(variable):
+        continue
+
+
+
 def add_event(
         sbml_model: libsbml.Model,
         event_id: str,
@@ -52,6 +58,10 @@ def add_event(
     trigger.setMath(trigger_math)
 
     for variable, event_assignment_formula in event_assignments.items():
+        remove_rules(
+            variable=variable,
+            sbml_model=sbml_model,
+        )
         event_assignment = event.createEventAssignment()
         event_assignment.setVariable(variable)
         event_assignment_math = \

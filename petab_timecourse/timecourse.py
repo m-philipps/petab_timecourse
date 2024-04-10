@@ -50,7 +50,12 @@ class Period:
             The PEtab problem for this time period.
             e.g.: only contains measurements within the period start and end.
     """
-    def __init__(self, duration: TYPE_TIME, condition_id: str):
+    def __init__(
+        self,
+        duration: TYPE_TIME,
+        condition_id: str,
+        parameters: dict[str, float] = None,
+    ):
         # Parameterized time (a parameter id) cannot be cast to float
         try:
             self.duration = float(duration)
@@ -58,6 +63,20 @@ class Period:
             self.duration = duration
 
         self.condition_id = condition_id
+
+        if parameters is None:
+            parameters = {}
+        parameter_ids = []
+        parameter_values = []
+        for parameter_id, parameter_value in parameters.items():
+            parameter_ids.append(parameter_id)
+            parameter_values.append(parameter_value)
+        self.parameter_ids = tuple(parameter_ids)
+        self.parameter_values = tuple(parameter_values)
+
+    @property
+    def parameters(self):
+        return dict(zip(self.parameter_ids, self.parameter_values))
 
     def get_condition(self, petab_problem: petab.Problem) -> pd.Series:
         return petab_problem.condition_df.loc[self.condition_id]
@@ -75,6 +94,13 @@ class Period:
             petab_problem.measurement_df[TIME] < t0
         )
         return petab_problem.measurement_df.loc[after_start & before_end]
+
+    def __hash__(self) -> int:
+        return hash((self.parameter_ids, self.parameter_values))
+
+    def __eq__(self, other) -> bool:
+        return hash(self) == hash(other)
+
 
 class Timecourse:
     """A timecourse.

@@ -33,9 +33,10 @@ from .C import (
 from .format import get_timecourse_df
 
 from .sbml import add_timecourse_as_events
+from .timecourse import Timecourse
 
 
-class Problem:
+class Problem(petab.Problem):
     @staticmethod
     def from_yaml(*args, **kwargs):
         problem = petab.Problem.from_yaml(*args, **kwargs)
@@ -46,13 +47,41 @@ class Problem:
         if len(timecourse_files) < 1:
             raise ValueError("no timecourse files?")
 
-        from pathlib import Path
         root_path = Path(args[0]).parent
         timecourse_df = get_timecourse_df(root_path / timecourse_files[0])
 
         problem.timecourse_df = timecourse_df
+
+        # TODO remove when integrated into main PEtab library
+        from functools import partial
+        problem.get_timecourse = partial(get_timecourse, self=problem)
         return problem
 
+
+def get_timecourse(self, timecourse_id: str) -> Timecourse:
+    return Timecourse.from_df(
+        timecourse_df=self.timecourse_df,
+        timecourse_id=timecourse_id,
+    )
+
+def to_single_petab_with_events(problem: Problem):
+    # create an SBML that encodes all timecourses
+    # as events.
+    # change all timecourses to be dummy, where
+    # timecourse_id==1 is used to activate the relevant
+    # timecourse when simulating the single SBML
+    pass
+
+def to_multiple_petab(problem: Problem):
+    # one PEtab per unique period, and the order in which to
+    # simulate each PEtab, for each timecourse
+    # each PEtab already contains the fixed parameters
+    # of that period
+    pass
+
+def to_single_petab(problem: Problem):
+    # 
+    pass
 
 def get_models(problem: petab.Problem):
     models = {}

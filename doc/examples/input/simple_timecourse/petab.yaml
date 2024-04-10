@@ -9,3 +9,8 @@ problems:
   - observables.tsv
   sbml_files:
   - model.xml
+extensions:
+  timecourse:
+    format_version: 1
+    timecourse_files:
+    - timecourse.tsv

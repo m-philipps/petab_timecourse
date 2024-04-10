@@ -32,6 +32,7 @@ class Condition(dict):
     def __init__(
             self,
             row: pd.Series,
+            condition_id: str = None,
     ):
         """
 
@@ -45,9 +46,15 @@ class Condition(dict):
             for component, value in row.items()
             if component not in NON_COMPONENT_CONDITION_LABELS
         }
+        components = {
+            component: components[component]
+            for component in sorted(components)
+        }
         super().__init__(components)
-        self.condition_id = row.name
-        self.name = row.get(CONDITION_NAME, None)
+        if condition_id is None:
+            condition_id = row.name
+        self.condition_id = condition_id
+        #self.name = row.get(CONDITION_NAME, None)
 
     @property
     def components(self):
