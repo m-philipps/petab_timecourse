@@ -84,14 +84,15 @@ class Period:
     def get_measurements(
         self,
         petab_problem: petab.Problem,
-        t0: float,
+        t0: Union[int, float],
+        t_end: Union[int, float],
         include_end: bool = False,
     ) -> pd.Series:
         after_start = petab_problem.measurement_df[TIME] >= t0
         before_end = (
-            petab_problem.measurement_df[TIME] <= t0
+            petab_problem.measurement_df[TIME] <= t_end
             if include_end else
-            petab_problem.measurement_df[TIME] < t0
+            petab_problem.measurement_df[TIME] < t_end
         )
         return petab_problem.measurement_df.loc[after_start & before_end]
 
