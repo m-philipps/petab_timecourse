@@ -277,6 +277,15 @@ class Timecourse:
 
     def __len__(self):
         return len(self.periods)
+    
+    def export_to_amici(self) -> Tuple[Tuple[float, Dict[str, float]]]:
+        """
+        Returns:
+            One tuple per period, with period duration and condition parameters.
+        """
+        durations = [p.duration for p in self.periods]
+        parameters = [p.parameters for p in self.periods]
+        return tuple(zip(durations, parameters))
 
 
 def get_timecourse_df(timecourse_file: Union[str, pd.DataFrame, None]) -> pd.DataFrame:
