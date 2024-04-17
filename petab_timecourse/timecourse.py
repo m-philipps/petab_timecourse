@@ -289,10 +289,10 @@ class Timecourse:
 
 
 def get_timecourse_df(timecourse_file: Union[str, pd.DataFrame, None]) -> pd.DataFrame:
-    """Read the provided condition file into a ``pandas.Dataframe``
-    Conditions are rows, parameters are columns, conditionId is index.
+    """Read the provided timecourse file into a ``pandas.Dataframe``
+    Timecourses are rows, periods are columns, timecourseId is index.
     Arguments:
-        condition_file: File name of PEtab condition file or pandas.Dataframe
+        timecourse_file: File name of PEtab timecourse file or pandas.Dataframe
     """
     if timecourse_file is None:
         return timecourse_file
